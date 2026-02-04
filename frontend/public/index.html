@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookFlow | Professional Booking</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+
+    <!-- Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Outfit', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f5f3ff',
+                            100: '#ede9fe',
+                            500: '#8b5cf6', // Violet
+                            600: '#7c3aed',
+                            700: '#6d28d9',
+                            900: '#4c1d95',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+        }
+
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(5, 1fr);
+            /* Time + 5 Days */
+            gap: 1px;
+            background-color: #e5e7eb;
+            border: 1px solid #e5e7eb;
+        }
+
+        .timeline-cell {
+            background-color: white;
+            min-height: 50px;
+            padding: 4px;
+        }
+
+        .timeline-header {
+            background-color: #f9fafb;
+            padding: 10px;
+            font-weight: 600;
+            text-align: center;
+            font-size: 0.875rem;
+        }
+    </style>
+</head>
+
+<body class="bg-gray-50 text-gray-800 h-screen flex overflow-hidden">
+
+    <!-- Sidebar -->
+    <aside class="w-64 bg-white border-r border-gray-200 hidden md:flex flex-col z-10">
+        <div class="p-6 flex items-center gap-3">
+            <div
+                class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-brand-500/30">
+                <i data-lucide="zap" class="w-6 h-6"></i>
+            </div>
+            <span class="text-xl font-bold text-gray-900 tracking-tight">BookFlow</span>
+        </div>
+
+        <nav class="flex-1 px-4 space-y-1 mt-6">
+            <a href="#" onclick="switchTab('dashboard')" id="nav-dashboard"
+                class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl transition-all duration-200 bg-brand-50 text-brand-700">
+                <i data-lucide="layout-grid" class="w-5 h-5"></i>
+                Overview
+            </a>
+            <a href="#" onclick="switchTab('bookings')" id="nav-bookings"
+                class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                <i data-lucide="list" class="w-5 h-5"></i>
+                Bookings
+            </a>
+            <a href="#" onclick="switchTab('resources')" id="nav-resources"
+                class="nav-item flex items-center gap-3 px-4 py-3 text-sm font-medium rounded-xl text-gray-500 hover:bg-gray-50 hover:text-gray-900 transition-all duration-200">
+                <i data-lucide="box" class="w-5 h-5"></i>
+                Resources
+            </a>
+            <div class="pt-4 mt-4 border-t border-gray-100">
+                <button id="google-sync-btn" onclick="startGoogleAuth()"
+                    class="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition shadow-sm group">
+                    <img src="https://www.google.com/favicon.ico"
+                        class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <span id="sync-btn-text">Sync Calendar</span>
+                </button>
+            </div>
+        </nav>
+
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50/50">
+        <!-- Header -->
+        <header
+            class="bg-white/80 backdrop-blur-md border-b border-gray-200 h-16 flex items-center justify-between px-8 sticky top-0 z-10">
+            <div class="flex items-center gap-4">
+                <h2 class="text-xl font-bold text-gray-800" id="page-title">Dashboard</h2>
+                <div class="h-6 w-px bg-gray-300"></div>
+                <p class="text-sm text-gray-500" id="current-date">Today</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="logout()" class="text-gray-400 hover:text-red-500 transition-colors" title="Sign Out">
+                    <i data-lucide="log-out" class="w-5 h-5"></i>
+                </button>
+                <button onclick="document.getElementById('new-booking-modal').classList.remove('hidden')"
+                    class="bg-gray-900 hover:bg-black text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-lg shadow-gray-900/20 transform hover:-translate-y-0.5">
+                    <i data-lucide="plus-circle" class="w-4 h-4"></i>
+                    New Booking
+                </button>
+            </div>
+        </header>
+
+        <!-- Scrollable Content -->
+        <div class="flex-1 overflow-auto p-8 relative">
+
+            <!-- VIEW: DASHBOARD (Rich Overview) -->
+            <div id="view-dashboard" class="view-section space-y-8">
+                <!-- Hero Section: Next Up -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div
+                        class="lg:col-span-2 bg-gradient-to-br from-brand-600 to-brand-800 rounded-3xl p-8 text-white shadow-xl shadow-brand-200 relative overflow-hidden group">
+                        <div class="relative z-10">
+                            <span
+                                class="bg-white/20 backdrop-blur-md px-3 py-1 rounded-full text-[10px] uppercase font-bold tracking-widest mb-4 inline-block">Next
+                                Appointment</span>
+                            <div id="next-booking-hero">
+                                <h2 class="text-4xl font-bold mb-2">No upcoming bookings</h2>
+                                <p class="text-brand-100 mb-6">Your schedule is currently clear. Why not host something
+                                    new?</p>
+                            </div>
+                            <button onclick="switchTab('bookings')"
+                                class="bg-white text-brand-700 px-6 py-2.5 rounded-xl font-bold text-sm hover:scale-105 transition-transform flex items-center gap-2">
+                                <i data-lucide="plus" class="w-4 h-4"></i> Schedule Now
+                            </button>
+                        </div>
+                        <!-- Abstract Background Shapes -->
+                        <div
+                            class="absolute -right-10 -bottom-10 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-700">
+                        </div>
+                        <div
+                            class="absolute right-20 top-0 w-32 h-32 bg-brand-400/20 rounded-full blur-2xl animate-pulse">
+                        </div>
+                    </div>
+
+                    <!-- Mini Stats Column -->
+                    <div class="grid grid-rows-2 gap-4">
+                        <div
+                            class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Today's
+                                    Load</p>
+                                <h3 class="text-3xl font-bold text-gray-900" id="stat-daily">0</h3>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-green-600 font-medium">
+                                <i data-lucide="trending-up" class="w-4 h-4"></i> Live Updates
+                            </div>
+                        </div>
+                        <div
+                            class="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm flex flex-col justify-between">
+                            <div>
+                                <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Resource
+                                    Use</p>
+                                <h3 class="text-3xl font-bold text-gray-900" id="stat-utilization">0%</h3>
+                            </div>
+                            <div class="w-full bg-gray-100 h-1.5 rounded-full overflow-hidden">
+                                <div id="utilization-bar"
+                                    class="bg-brand-500 h-1.5 rounded-full transition-all duration-1000"
+                                    style="width: 0%"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Secondary Section: Activity & System -->
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Recent Activity Feed -->
+                    <div class="lg:col-span-2 bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+                        <div class="px-8 py-6 border-b border-gray-50 flex justify-between items-center">
+                            <h3 class="font-bold text-gray-900">Live Timeline</h3>
+                            <span class="text-[11px] text-gray-400 font-medium">Auto-syncing active</span>
+                        </div>
+                        <div class="p-8" id="recent-activity-list">
+                            <!-- Loader -->
+                            <div class="space-y-6">
+                                <div class="flex gap-4 animate-pulse">
+                                    <div class="w-12 h-12 bg-gray-100 rounded-2xl"></div>
+                                    <div class="flex-1 space-y-3 py-1">
+                                        <div class="h-2 bg-gray-100 rounded w-1/4"></div>
+                                        <div class="h-2 bg-gray-100 rounded w-3/4"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Health & Quick Actions -->
+                    <div class="space-y-6">
+
+                        <!-- Quick Action Card -->
+                        <div class="bg-brand-50 rounded-3xl p-8 border border-brand-100">
+                            <h4 class="text-brand-900 font-bold text-sm mb-4">Quick Actions</h4>
+                            <div class="grid grid-cols-2 gap-3">
+                                <button onclick="switchTab('bookings')"
+                                    class="p-3 bg-white rounded-2xl text-center hover:bg-brand-600 hover:text-white transition-all group border border-brand-100 shadow-sm">
+                                    <i data-lucide="plus"
+                                        class="w-5 h-5 mx-auto mb-2 text-brand-600 group-hover:text-white"></i>
+                                    <span class="text-[10px] font-bold uppercase tracking-tight">Booking</span>
+                                </button>
+                                <button onclick="syncWithGoogle()"
+                                    class="p-3 bg-white rounded-2xl text-center hover:bg-brand-600 hover:text-white transition-all group border border-brand-100 shadow-sm">
+                                    <i data-lucide="refresh-cw"
+                                        class="w-5 h-5 mx-auto mb-2 text-brand-600 group-hover:text-white"></i>
+                                    <span class="text-[10px] font-bold uppercase tracking-tight">Sync</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- VIEW: BOOKINGS (Data Table) -->
+            <div id="view-bookings" class="view-section hidden space-y-6">
+                <!-- Filters -->
+                <div class="flex flex-wrap gap-4 items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
+                    <div class="flex-1 relative">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-gray-400"></i>
+                        <input type="text" placeholder="Search bookings..."
+                            class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
+                    </div>
+                    <select id="filter-resource"
+                        class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:border-brand-500 outline-none">
+                        <option value="all">All Resources</option>
+                    </select>
+                    <div class="flex bg-gray-100 p-1 rounded-lg">
+                        <button
+                            class="px-3 py-1.5 text-xs font-medium rounded-md bg-white shadow-sm text-gray-800">All</button>
+                        <button
+                            class="px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 hover:text-gray-900">Confirmed</button>
+                        <button
+                            class="px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 hover:text-gray-900">Cancelled</button>
+                    </div>
+                    <button id="sync-google-btn" onclick="syncWithGoogle()"
+                        class="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 hover:bg-brand-100 rounded-lg text-sm font-semibold transition-all">
+                        <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                        Refresh from Google
+                    </button>
+                </div>
+
+                <!-- Table -->
+                <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+                    <table class="min-w-full divide-y divide-gray-100">
+                        <thead class="bg-gray-50/50">
+                            <tr>
+                                <th
+                                    class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Date</th>
+                                <th
+                                    class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Resource</th>
+                                <th
+                                    class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Duration</th>
+                                <th
+                                    class="px-6 py-4 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Status</th>
+                                <th
+                                    class="px-6 py-4 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookings-table-body" class="divide-y divide-gray-100 bg-white">
+                            <!-- Rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- VIEW: RESOURCES (Cards) -->
+            <div id="view-resources" class="view-section hidden">
+                <div class="flex justify-end mb-6">
+                    <button onclick="document.getElementById('new-resource-modal').classList.remove('hidden')"
+                        class="bg-brand-600 hover:bg-brand-700 text-white px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all shadow-lg shadow-brand-500/30 transform hover:-translate-y-0.5">
+                        <i data-lucide="plus" class="w-4 h-4"></i>
+                        Add Resource
+                    </button>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="resources-grid">
+                    <!-- Cards -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Modal Form (Hidden) -->
+    <div id="new-booking-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all scale-100">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-lg font-bold text-gray-900">Book a Resource</h3>
+                <button onclick="document.getElementById('new-booking-modal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="booking-form" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Select Resource</label>
+                    <div class="relative">
+                        <select id="resource-select" required
+                            class="w-full appearance-none rounded-xl border border-gray-200 px-4 py-3 pr-8 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none bg-white">
+                            <option value="">Choose...</option>
+                        </select>
+                        <i data-lucide="chevron-down"
+                            class="w-4 h-4 absolute right-3 top-3.5 text-gray-400 pointer-events-none"></i>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-5">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Date</label>
+                        <input id="booking-date"
+                            class="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                            placeholder="Select date">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Start Time</label>
+                        <input id="booking-time"
+                            class="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                            placeholder="09:00">
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Duration</label>
+                    <div class="flex gap-3">
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="duration" value="30" class="peer sr-only">
+                            <div
+                                class="rounded-xl border border-gray-200 py-2.5 text-center text-sm peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 hover:border-brand-200 transition-all">
+                                30m</div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="duration" value="60" class="peer sr-only" checked>
+                            <div
+                                class="rounded-xl border border-gray-200 py-2.5 text-center text-sm peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 hover:border-brand-200 transition-all">
+                                1h</div>
+                        </label>
+                        <label class="flex-1 cursor-pointer">
+                            <input type="radio" name="duration" value="90" class="peer sr-only">
+                            <div
+                                class="rounded-xl border border-gray-200 py-2.5 text-center text-sm peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700 hover:border-brand-200 transition-all">
+                                1.5h</div>
+                        </label>
+                    </div>
+                </div>
+
+                <button type="submit"
+                    class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-brand-500/30 transition-all transform active:scale-95">
+                    Confirm Booking
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Resource Modal -->
+    <div id="new-resource-modal"
+        class="hidden fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/40 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-lg overflow-hidden transform transition-all scale-100">
+            <div class="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h3 class="text-lg font-bold text-gray-900">Add New Resource</h3>
+                <button onclick="document.getElementById('new-resource-modal').classList.add('hidden')"
+                    class="text-gray-400 hover:text-gray-600 transition-colors">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+            <form id="resource-form" class="p-6 space-y-5">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Resource Name</label>
+                    <input id="resource-name" required
+                        class="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                        placeholder="e.g. Conference Room C">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                    <textarea id="resource-desc" rows="3"
+                        class="w-full rounded-xl border border-gray-200 px-4 py-3 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
+                        placeholder="Optional details..."></textarea>
+                </div>
+                <button type="submit"
+                    class="w-full bg-brand-600 hover:bg-brand-700 text-white font-semibold py-3.5 rounded-xl shadow-lg shadow-brand-500/30 transition-all transform active:scale-95">
+                    Create Resource
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Feedback Toast -->
+    <div id="toast" class="fixed top-6 right-6 transform -translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <div class="bg-white border-l-4 border-green-500 px-6 py-4 rounded-lg shadow-xl flex items-center gap-4">
+            <div class="bg-green-100 p-2 rounded-full text-green-600">
+                <i data-lucide="check" class="w-4 h-4"></i>
+            </div>
+            <div>
+                <p class="font-bold text-gray-900">Success</p>
+                <p class="text-sm text-gray-500" id="toast-message">Action completed.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = '/api';
+        let resourcesMap = {};
+        const token = localStorage.getItem('auth_token');
+        if (!token) window.location.href = 'login.html';
+
+        const dateFormatter = new Intl.DateTimeFormat([], { month: 'short', day: 'numeric', year: 'numeric' });
+        const timeFormatter = new Intl.DateTimeFormat([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+        function formatDateTime(date) {
+            return {
+                date: dateFormatter.format(date),
+                time: timeFormatter.format(date)
+            };
+        }
+
+        function logout() {
+            localStorage.removeItem('auth_token');
+            window.location.href = 'login.html';
+        }
+
+        // --- Fetch Helper ---
+        async function apiFetch(endpoint, options = {}) {
+            const headers = {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...options.headers
+            };
+
+            const res = await fetch(`${API_URL}${endpoint}`, { ...options, headers });
+
+            if (res.status === 401) {
+                logout();
+                throw new Error("Unauthorized");
+            }
+            return res;
+        }
+
+        // --- Init ---
+        lucide.createIcons();
+        document.getElementById('current-date').textContent = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+
+        flatpickr("#booking-date", { minDate: "today", dateFormat: "Y-m-d", defaultDate: "today" });
+        flatpickr("#booking-time", { enableTime: true, noCalendar: true, dateFormat: "H:i", minTime: "08:00", maxTime: "18:00", defaultDate: "09:00" });
+
+        // --- Navigation ---
+        function switchTab(tabId) {
+            // Update Sidebar
+            document.querySelectorAll('.nav-item').forEach(el => {
+                el.classList.remove('bg-brand-50', 'text-brand-700');
+                el.classList.add('text-gray-500', 'hover:bg-gray-50', 'hover:text-gray-900');
+            });
+            const activeLink = document.getElementById(`nav-${tabId}`);
+            if (activeLink) {
+                activeLink.classList.remove('text-gray-500', 'hover:bg-gray-50', 'hover:text-gray-900');
+                activeLink.classList.add('bg-brand-50', 'text-brand-700');
+            }
+
+            // Update View
+            document.querySelectorAll('.view-section').forEach(el => el.classList.add('hidden'));
+            document.getElementById(`view-${tabId}`).classList.remove('hidden');
+
+            // Update Title
+            const titles = { 'dashboard': 'Overview', 'bookings': 'Manage Bookings', 'resources': 'Resources' };
+            document.getElementById('page-title').textContent = titles[tabId];
+        }
+
+        // --- Data Fetching ---
+        async function fetchResources() {
+            try {
+                const res = await apiFetch('/resources');
+                const data = await res.json();
+
+                const select = document.getElementById('resource-select');
+                const filterSelect = document.getElementById('filter-resource');
+                const grid = document.getElementById('resources-grid');
+
+                select.innerHTML = '<option value="">Choose...</option>';
+                // Keep filter default
+
+                grid.innerHTML = '';
+
+                data.resources.forEach(r => {
+                    resourcesMap[r.id] = r.name;
+
+                    // Populate Select
+                    const opt = document.createElement('option');
+                    opt.value = r.id;
+                    opt.textContent = r.name;
+                    select.appendChild(opt);
+
+                    // Populate Filter
+                    const filterOpt = document.createElement('option');
+                    filterOpt.value = r.id;
+                    filterOpt.textContent = r.name;
+                    filterSelect.appendChild(filterOpt);
+
+                    // Populate Grid Card
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-all group';
+                    card.innerHTML = `
+                        <div class="w-12 h-12 bg-gray-50 rounded-xl flex items-center justify-center text-gray-400 group-hover:bg-brand-50 group-hover:text-brand-600 transition-colors mb-4">
+                            <i data-lucide="monitor" class="w-6 h-6"></i>
+                        </div>
+                        <h4 class="font-bold text-gray-900 text-lg mb-2">${r.name}</h4>
+                        <p class="text-sm text-gray-500 mb-4 line-clamp-2">${r.description || 'No description available for this resource.'}</p>
+                        <div class="flex items-center gap-2 text-xs font-medium text-green-600 bg-green-50 px-3 py-1.5 rounded-lg w-fit">
+                            <span class="w-1.5 h-1.5 bg-green-500 rounded-full"></span> Available
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+                lucide.createIcons();
+            } catch (e) { console.error("Res Error", e); }
+        }
+
+        async function fetchBookings() {
+            try {
+                const res = await apiFetch('/bookings');
+                const data = await res.json();
+                const bookings = data.bookings || [];
+
+                document.getElementById('stat-daily').textContent = bookings.length;
+                renderBookingTable(bookings);
+                updateDashboardStats(bookings);
+                renderRecentActivity(bookings);
+            } catch (e) { console.error("Bookings Error", e); }
+        }
+
+        function renderBookingTable(bookings) {
+            const tbody = document.getElementById('bookings-table-body');
+            tbody.innerHTML = '';
+
+            if (bookings.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-8 text-center text-gray-400 bg-gray-50/30">No bookings found yet.</td></tr>`;
+                return;
+            }
+
+            bookings.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50/50 transition-colors group';
+
+                const date = new Date(b.starts_at);
+                const endDate = new Date(b.ends_at);
+                const duration = Math.round((endDate - date) / 60000);
+                const { date: dateStr, time: timeStr } = formatDateTime(date);
+
+                const statusStyles = b.status === 'confirmed' ? 'bg-green-50 text-green-700 ring-green-600/20' :
+                    b.status === 'cancelled' ? 'bg-red-50 text-red-700 ring-red-600/20' : 'bg-yellow-50 text-yellow-700';
+
+                tr.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="font-medium text-gray-900">${dateStr}</div>
+                        <div class="text-xs text-gray-500">${timeStr}</div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500 text-xs font-bold">
+                                ${resourcesMap[b.resource_id] ? resourcesMap[b.resource_id].charAt(0) : 'R'}
+                            </div>
+                            <span class="text-sm text-gray-700">${resourcesMap[b.resource_id] || b.resource_id}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${duration}m
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center rounded-md px-2 py-1 text-xs font-medium ring-1 ring-inset ${statusStyles}">
+                            ${b.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right">
+                        ${b.status === 'confirmed' ? `
+                            <button onclick="cancelBooking('${b.id}', this)" class="text-gray-400 hover:text-red-600 transition-colors p-2 rounded-lg hover:bg-red-50">
+                                <i data-lucide="trash-2" class="w-4 h-4"></i>
+                            </button>
+                        ` : ''}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            lucide.createIcons();
+        }
+
+        // --- Actions ---
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.textContent = 'Processing...';
+            btn.disabled = true;
+
+            const date = document.getElementById('booking-date').value;
+            const time = document.getElementById('booking-time').value;
+            const duration = parseInt(document.querySelector('input[name="duration"]:checked').value);
+
+            const start = `${date}T${time}:00`;
+            const endDateObj = new Date(new Date(start).getTime() + duration * 60000);
+            // Format for local time (simplification for demo)
+            const toLocalISO = (d) => {
+                const offset = d.getTimezoneOffset() * 60000;
+                return new Date(d.getTime() - offset).toISOString().slice(0, 19);
+            };
+
+            try {
+                const res = await apiFetch('/bookings', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        resource_id: document.getElementById('resource-select').value,
+                        starts_at: start,
+                        ends_at: toLocalISO(endDateObj)
+                    })
+                });
+
+                if (res.ok) {
+                    showToast('Booking successfully confirmed.');
+                    document.getElementById('new-booking-modal').classList.add('hidden');
+                    fetchBookings();
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Failed');
+                }
+            } catch (e) { console.error(e); }
+            finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        document.getElementById('resource-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button');
+            const originalText = btn.innerHTML;
+            btn.textContent = 'Creating...';
+            btn.disabled = true;
+
+            try {
+                const res = await apiFetch('/resources', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        name: document.getElementById('resource-name').value,
+                        description: document.getElementById('resource-desc').value
+                    })
+                });
+
+                if (res.ok) {
+                    showToast('Resource created successfully.');
+                    document.getElementById('new-resource-modal').classList.add('hidden');
+                    // Clear form
+                    document.getElementById('resource-name').value = '';
+                    document.getElementById('resource-desc').value = '';
+                    fetchResources();
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Failed');
+                }
+            } catch (e) { console.error(e); }
+            finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        });
+
+        async function cancelBooking(id, btn) {
+            if (!confirm("Are you sure you want to cancel?")) return;
+            btn.innerHTML = '<i class="animate-spin" data-lucide="loader"></i>';
+            lucide.createIcons();
+
+            try {
+                const res = await apiFetch(`/bookings/${id}`, { method: 'DELETE' });
+                if (res.ok) {
+                    showToast('Booking cancelled.');
+                    fetchBookings();
+                }
+            } catch (e) { }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            document.getElementById('toast-message').textContent = msg;
+            t.classList.remove('-translate-y-20', 'opacity-0');
+            setTimeout(() => t.classList.add('-translate-y-20', 'opacity-0'), 3000);
+        }
+
+        async function syncWithGoogle() {
+            const btn = document.getElementById('sync-google-btn');
+            const originalHTML = btn.innerHTML;
+            btn.innerHTML = '<i data-lucide="refresh-cw" class="w-4 h-4 animate-spin"></i> Syncing...';
+            btn.disabled = true;
+
+            try {
+                const res = await apiFetch('/bookings/sync', { method: 'POST' });
+                if (res.ok) {
+                    const data = await res.json();
+                    showToast('Sync complete!');
+                    if (data.bookings) {
+                        const bookings = data.bookings;
+                        document.getElementById('stat-daily').textContent = bookings.length;
+                        renderBookingTable(bookings);
+                        updateDashboardStats(bookings);
+                        renderRecentActivity(bookings);
+                    }
+                } else {
+                    const err = await res.json();
+                    alert(err.error || 'Sync failed');
+                }
+            } catch (e) {
+                console.error("Sync Error", e);
+            } finally {
+                btn.innerHTML = originalHTML;
+                btn.disabled = false;
+                lucide.createIcons();
+            }
+        }
+
+        // --- Google Sync ---
+        async function startGoogleAuth() {
+            const btn = document.getElementById('google-sync-btn');
+            const btnText = document.getElementById('sync-btn-text');
+            btnText.textContent = 'Redirecting...';
+            btn.disabled = true;
+
+            try {
+                const res = await apiFetch('/auth/google/url');
+                const data = await res.json();
+                if (data.url) {
+                    window.location.href = data.url;
+                }
+            } catch (e) {
+                console.error("Auth URL Error", e);
+                btnText.textContent = 'Sync Calendar';
+                btn.disabled = false;
+            }
+        }
+
+        // Check for sync success in URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('sync') === 'success') {
+            showToast('Google Calendar connected successfully!');
+            // Clean up URL
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+
+        async function checkGoogleConnection() {
+            try {
+                const res = await apiFetch('/me');
+                const data = await res.json();
+                const statusLabel = document.getElementById('google-status-label');
+
+                if (data.is_google_connected) {
+                    const btn = document.getElementById('google-sync-btn');
+                    if (btn) {
+                        btn.classList.add('bg-green-50', 'border-green-100', 'text-green-700');
+                        btn.classList.remove('text-gray-700', 'hover:bg-gray-50');
+                        btn.innerHTML = `
+                            <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
+                            <span>Calendar Connected</span>
+                        `;
+                    }
+                    lucide.createIcons();
+                }
+            } catch (e) {
+                console.error("Profile check failed", e);
+            }
+        }
+
+        function updateDashboardStats(bookings) {
+            const confirmed = bookings.filter(b => b.status === 'confirmed').length;
+            const occupancy = Math.min(Math.round((confirmed / 10) * 100), 100);
+
+            const statText = document.getElementById('stat-utilization');
+            const statBar = document.getElementById('utilization-bar');
+
+            if (statText) statText.textContent = `${occupancy}%`;
+            if (statBar) statBar.style.width = `${occupancy}%`;
+        }
+
+        function renderRecentActivity(bookings) {
+            const container = document.getElementById('recent-activity-list');
+            const hero = document.getElementById('next-booking-hero');
+            if (!container) return;
+
+            container.innerHTML = '';
+
+            // Handle Hero: "Next Up"
+            const futureBookings = bookings
+                .filter(b => b.status === 'confirmed' && new Date(b.starts_at) > new Date())
+                .sort((a, b) => new Date(a.starts_at) - new Date(b.starts_at));
+
+            if (futureBookings.length > 0 && hero) {
+                const next = futureBookings[0];
+                const { date, time } = formatDateTime(new Date(next.starts_at));
+                hero.innerHTML = `
+                    <h2 class="text-4xl font-bold mb-2">${resourcesMap[next.resource_id] || 'Reserved Resource'}</h2>
+                    <p class="text-brand-100 mb-6">Upcoming on ${date} at ${time}. Everything is ready for you.</p>
+                `;
+            } else if (hero) {
+                hero.innerHTML = `
+                    <h2 class="text-4xl font-bold mb-2">No upcoming bookings</h2>
+                    <p class="text-brand-100 mb-6">Your schedule is currently clear. Why not host something new?</p>
+                `;
+            }
+
+            // Handle Timeline: last 5 created/synced
+            const recent = [...bookings]
+                .sort((a, b) => new Date(b.starts_at) - new Date(a.starts_at))
+                .slice(0, 5);
+
+            if (recent.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-10">
+                        <div class="w-16 h-16 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4 text-gray-300">
+                            <i data-lucide="inbox" class="w-8 h-8"></i>
+                        </div>
+                        <p class="text-sm text-gray-500">No activity recorded yet.</p>
+                    </div>
+                `;
+                lucide.createIcons();
+                return;
+            }
+
+            recent.forEach(b => {
+                const date = new Date(b.starts_at);
+                const { date: dateStr, time: timeStr } = formatDateTime(date);
+                const statusStyles = b.status === 'confirmed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700';
+                const div = document.createElement('div');
+                div.className = 'flex items-center justify-between p-4 rounded-2xl border border-gray-50 hover:bg-gray-50 transition-all group';
+                div.innerHTML = `
+                    <div class="flex items-center gap-4">
+                        <div class="w-12 h-12 bg-gray-50 text-gray-400 rounded-2xl flex items-center justify-center font-bold group-hover:bg-brand-600 group-hover:text-white transition-all transform group-hover:rotate-6">
+                            ${(resourcesMap[b.resource_id] || 'R').charAt(0)}
+                        </div>
+                        <div>
+                            <p class="text-sm font-bold text-gray-900">${resourcesMap[b.resource_id] || 'Booking Request'}</p>
+                            <p class="text-xs text-gray-500">${dateStr} at ${timeStr}</p>
+                        </div>
+                    </div>
+                    <span class="text-[10px] uppercase font-bold px-3 py-1 rounded-full ${statusStyles}">
+                        ${b.status}
+                    </span>
+                `;
+                container.appendChild(div);
+            });
+            lucide.createIcons();
+        }
+
+        // Run
+        checkGoogleConnection();
+        fetchResources();
+        fetchBookings();
+    </script>
+</body>
+
+</html>
