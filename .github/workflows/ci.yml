@@ -58,9 +58,9 @@ jobs:
         env:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
-          DB_DATABASE: bookflow_test
-          DB_USERNAME: root
-          DB_PASSWORD: root
+          DB_NAME: bookflow_test
+          DB_USER: root
+          DB_PASS: root
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
