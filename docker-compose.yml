@@ -1,0 +1,90 @@
+#version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bookflow_app
+    restart: unless-stopped
+    working_dir: /var/www
+    env_file:
+      - .env
+    volumes:
+      - ./:/var/www
+    networks:
+      - bookflow
+
+  db:
+    image: mariadb:11.4 # Official LTS (~380MB), no Alpine available from MariaDB
+    container_name: bookflow_db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: bookflow
+      MARIADB_ROOT_PASSWORD: root
+      MARIADB_PASSWORD: bookflow
+      MARIADB_USER: bookflow
+    volumes:
+      - dbdata:/var/lib/mariadb
+      - ./database/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+    ports:
+      - "3306:3306"
+    networks:
+      - bookflow
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  nginx:
+    image: nginx:alpine
+    container_name: bookflow_nginx
+    restart: unless-stopped
+    ports:
+      - "8000:80"
+    volumes:
+      - ./:/var/www
+      - ./docker/nginx:/etc/nginx/conf.d
+    networks:
+      - bookflow
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: bookflow_mailpit
+    restart: unless-stopped
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - bookflow
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: bookflow_phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db
+      PMA_USER: root
+      PMA_PASSWORD: root
+    ports:
+      - "8080:80"
+    networks:
+      - bookflow
+    depends_on:
+      - db
+
+  tunnel:
+    image: cloudflare/cloudflared:latest
+    restart: unless-stopped
+    command: tunnel --url http://nginx:80
+    networks:
+      - bookflow
+
+networks:
+  bookflow:
+    driver: bridge
+
+volumes:
+  dbdata:
+    driver: local
