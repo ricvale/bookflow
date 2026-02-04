@@ -257,9 +257,7 @@ final class ContainerConfig
 
         $container->bind(GoogleAuthController::class, fn (Container $c) => new GoogleAuthController(
             $c->get(GoogleCalendarClient::class),
-            $c->get(UserRepository::class),
-            $c->get(TenantContextInterface::class),
-            $c->get(UserContextInterface::class)
+            $c->get(UserRepository::class)
         ));
 
         // ============================================================

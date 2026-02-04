@@ -19,7 +19,7 @@ jobs:
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping"
+          --health-cmd="mysqladmin ping -h localhost -u root --password=root"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -47,6 +47,8 @@ jobs:
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
+        env:
+          COMPOSER_PROCESS_TIMEOUT: 2000
 
       - name: Import Database Schema
         run: mysql -h 127.0.0.1 -P 3306 -u root -proot bookflow_test < database/schema.sql
@@ -80,9 +82,11 @@ jobs:
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
+        env:
+          COMPOSER_PROCESS_TIMEOUT: 2000
 
       - name: Run PHPStan
-        run: vendor/bin/phpstan analyse src tests --level=8
+        run: vendor/bin/phpstan analyse src tests --level=8 --memory-limit=1G
 
       - name: Run PHP-CS-Fixer
         run: vendor/bin/php-cs-fixer fix --dry-run --diff
@@ -100,6 +104,8 @@ jobs:
 
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
+        env:
+          COMPOSER_PROCESS_TIMEOUT: 2000
 
       - name: Security check
         run: composer audit

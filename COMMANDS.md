@@ -35,13 +35,13 @@ docker compose exec app ./vendor/bin/phpunit --testsuite=Unit
 docker compose exec app ./vendor/bin/phpunit --coverage-html coverage
 
 # Run PHPStan (static analysis)
-docker compose exec app ./vendor/bin/phpstan analyse src tests --level=8
+docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/phpstan analyse src tests --level=8 --memory-limit=1G
 
 # Run PHP-CS-Fixer (code style check)
-docker compose exec app ./vendor/bin/php-cs-fixer fix --dry-run
+docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/php-cs-fixer fix --dry-run
 
 # Auto-fix code style
-docker compose exec app ./vendor/bin/php-cs-fixer fix
+docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/php-cs-fixer fix
 ```
 
 ## Database
@@ -107,7 +107,7 @@ docker image prune -a
 ### First Time Setup
 ```bash
 docker compose up -d
-docker compose exec app composer install
+docker compose exec -e XDEBUG_MODE=off app composer install
 docker compose exec app ./vendor/bin/phpunit
 ```
 
@@ -122,6 +122,6 @@ docker compose logs -f app
 ### Before Committing
 ```bash
 docker compose exec app ./vendor/bin/phpunit
-docker compose exec app ./vendor/bin/phpstan analyse src tests --level=8
-docker compose exec app ./vendor/bin/php-cs-fixer fix
+docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/phpstan analyse src tests --level=8 --memory-limit=1G
+docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/php-cs-fixer fix
 ```

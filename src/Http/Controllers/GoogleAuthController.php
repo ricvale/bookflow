@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace BookFlow\Http\Controllers;
 
-use BookFlow\Application\Shared\Interfaces\TenantContextInterface;
-use BookFlow\Application\Shared\Interfaces\UserContextInterface;
 use BookFlow\Domain\User\UserRepository;
 use BookFlow\Http\Response;
 use BookFlow\Infrastructure\Calendar\GoogleCalendarClient;
@@ -18,8 +16,6 @@ final class GoogleAuthController
     public function __construct(
         private GoogleCalendarClient $googleClient,
         private UserRepository $userRepo,
-        private TenantContextInterface $tenantContext,
-        private ?UserContextInterface $userContext = null
     ) {
     }
 

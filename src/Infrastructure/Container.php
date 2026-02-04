@@ -56,7 +56,7 @@ final class Container
     /**
      * Resolve and return an instance of the given type.
      *
-     * @template T
+     * @template T of object
      * @param class-string<T> $abstract
      * @return T
      */
@@ -64,6 +64,8 @@ final class Container
     {
         // Check if we have a cached singleton instance
         if (isset($this->instances[$abstract])) {
+            $instance = $this->instances[$abstract];
+            /** @var T */
             return $this->instances[$abstract];
         }
 
@@ -75,6 +77,7 @@ final class Container
             $this->instances[$abstract] = $instance;
         }
 
+        /** @var T */
         return $instance;
     }
 
@@ -169,6 +172,7 @@ final class Container
             }
 
             // Recursively resolve class dependencies
+            /** @var class-string<object> $typeName */
             return $this->get($typeName);
         }
 

@@ -78,7 +78,7 @@ final class GoogleCalendarClient implements CalendarClientInterface
         $request = new \Google\Service\Calendar\FreeBusyRequest();
         $request->setTimeMin($start->format(\DateTime::RFC3339));
         $request->setTimeMax($end->format(\DateTime::RFC3339));
-        $request->setItems([['id' => 'primary']]);
+        $request->setItems([new \Google\Service\Calendar\FreeBusyRequestItem(['id' => 'primary'])]);
 
         $query = $service->freebusy->query($request);
         $busySlots = $query->getCalendars()['primary']->getBusy();

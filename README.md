@@ -42,7 +42,7 @@ cd bookflow
 docker compose up -d
 
 # Install dependencies
-docker compose exec app composer install
+docker compose exec -e XDEBUG_MODE=off app composer install
 
 # Run tests
 docker compose exec app ./vendor/bin/phpunit

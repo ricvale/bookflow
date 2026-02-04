@@ -28,11 +28,11 @@ test-coverage: ## Run tests with coverage report
 	docker compose exec app ./vendor/bin/phpunit --coverage-html coverage
 
 lint: ## Run code quality checks
-	docker compose exec app ./vendor/bin/phpstan analyse src tests --level=8
-	docker compose exec app ./vendor/bin/php-cs-fixer fix --dry-run --diff
+	docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/phpstan analyse src tests --level=8 --memory-limit=1G
+	docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/php-cs-fixer fix --dry-run --diff
 
 fix: ## Fix code style issues
-	docker compose exec app ./vendor/bin/php-cs-fixer fix
+	docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/php-cs-fixer fix
 
 up: ## Start all services
 	docker compose up -d
@@ -78,9 +78,9 @@ security: ## Run security audit
 	docker compose exec app composer audit
 
 format-check: ## Check code formatting
-	docker compose exec app ./vendor/bin/php-cs-fixer fix --dry-run
+	docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/php-cs-fixer fix --dry-run
 
 format: ## Format code
-	docker compose exec app ./vendor/bin/php-cs-fixer fix
+	docker compose exec -e XDEBUG_MODE=off app ./vendor/bin/php-cs-fixer fix
 
 ci: lint test ## Run CI checks locally
