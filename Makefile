@@ -7,16 +7,19 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 install: ## Install dependencies
-	docker compose exec app composer install
+	docker compose exec -e XDEBUG_MODE=off app composer install
 
 install-prod: ## Install production dependencies (no dev)
-	docker compose exec app composer install --no-dev --optimize-autoloader
+	docker compose exec -e XDEBUG_MODE=off app composer install --no-dev --optimize-autoloader
 
 test: ## Run all tests
 	docker compose exec app ./vendor/bin/phpunit
 
 test-unit: ## Run unit tests only
 	docker compose exec app ./vendor/bin/phpunit --testsuite=Unit
+
+test-debug: ## Run tests with Xdebug triggered (requires trigger mode)
+	docker compose exec -e XDEBUG_TRIGGER=1 app ./vendor/bin/phpunit
 
 test-integration: ## Run integration tests only
 	docker compose exec app ./vendor/bin/phpunit --testsuite=Integration

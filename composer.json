@@ -26,6 +26,7 @@
         "friendsofphp/php-cs-fixer": "^3.40"
     },
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "process-timeout": 2000
     }
 }

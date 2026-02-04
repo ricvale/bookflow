@@ -14,6 +14,8 @@ services:
       - ./:/var/www
     networks:
       - bookflow
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   db:
     image: mariadb:11.4 # Official LTS (~380MB), no Alpine available from MariaDB

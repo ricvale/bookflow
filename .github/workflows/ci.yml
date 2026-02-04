@@ -48,6 +48,9 @@ jobs:
       - name: Install dependencies
         run: composer install --prefer-dist --no-progress
 
+      - name: Import Database Schema
+        run: mysql -h 127.0.0.1 -P 3306 -u root -proot bookflow_test < database/schema.sql
+
       - name: Run PHPUnit tests
         run: ./vendor/bin/phpunit --coverage-text --coverage-clover=coverage.xml
         env:

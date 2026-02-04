@@ -22,8 +22,8 @@ docker compose logs -f app    # Only app logs
 ## Development
 
 ```bash
-# Install PHP dependencies
-docker compose exec app composer install
+# Install PHP dependencies (with Xdebug disabled for speed)
+docker compose exec -e XDEBUG_MODE=off app composer install
 
 # Run all tests
 docker compose exec app ./vendor/bin/phpunit
