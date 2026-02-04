@@ -10,6 +10,8 @@ services:
     working_dir: /var/www
     env_file:
       - .env
+    environment:
+      - XDEBUG_MODE=${XDEBUG_MODE:-off}
     volumes:
       - ./:/var/www
     networks:
