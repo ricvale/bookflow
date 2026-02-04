@@ -12,16 +12,16 @@ jobs:
     
     services:
       mysql:
-        image: mysql:8.0
+        image: mariadb:11.4
         env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: bookflow_test
-          MYSQL_USER: bookflow
-          MYSQL_PASSWORD: bookflow
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: bookflow_test
+          MARIADB_USER: bookflow
+          MARIADB_PASSWORD: bookflow
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -h localhost -u root --password=root"
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=10s
           --health-timeout=5s
           --health-retries=3
@@ -65,8 +65,9 @@ jobs:
           DB_PASS: bookflow
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
+          token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage.xml
           fail_ci_if_error: true
 
