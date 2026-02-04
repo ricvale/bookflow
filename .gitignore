@@ -1,0 +1,15 @@
+/vendor
+/node_modules
+.env
+.phpunit.cache
+.phpunit.result.cache
+.php-cs-fixer.cache
+/coverage
+.idea
+.vscode
+.DS_Store
+*.log
+*.swp
+/var/
+!/var/.gitkeep
+auth.json

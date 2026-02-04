@@ -1,0 +1,9 @@
+.git
+.gitignore
+.env
+.idea
+.vscode
+coverage
+vendor
+node_modules
+auth.json
