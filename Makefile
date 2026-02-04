@@ -53,7 +53,11 @@ shell: ## Open shell in app container
 	docker compose exec app /bin/bash
 
 db-shell: ## Open MySQL shell
-	docker compose exec db mysql -u bookflow -pbookflow bookflow
+	docker compose exec db mariadb -u bookflow -pbookflow bookflow
+
+db-test-prepare: ## Create and schema-load the test database for local testing
+	docker compose exec db mariadb -u root -proot -e "CREATE DATABASE IF NOT EXISTS bookflow_test"
+	docker compose exec db mariadb -u root -proot bookflow_test -e "source /docker-entrypoint-initdb.d/01-schema.sql"
 
 clean: ## Clean up containers, volumes, and cache
 	docker compose down -v
@@ -66,10 +70,12 @@ migrate-rollback: ## Rollback last migration
 	docker compose exec app php bin/migrate.php rollback
 
 backup: ## Backup database
-	docker compose exec db mysqldump -u bookflow -pbookflow bookflow > backup_$(shell date +%Y%m%d_%H%M%S).sql
+	docker compose exec db mariadb-dump -u bookflow -pbookflow bookflow > backup_$(shell date +%Y%m%d_%H%M%S).sql
 
 restore: ## Restore database from backup (use FILE=backup.sql)
-	docker compose exec -T db mysql -u bookflow -pbookflow bookflow < $(FILE)
+	docker compose cp $(FILE) db:/tmp/restore_backup.sql
+	docker compose exec db mariadb -u bookflow -pbookflow bookflow -e "source /tmp/restore_backup.sql"
+	docker compose exec db rm /tmp/restore_backup.sql
 
 health: ## Check application health
 	curl -s http://localhost:8000/health | jq
@@ -83,4 +89,8 @@ format-check: ## Check code formatting
 format: ## Format code
 	docker compose exec app ./vendor/bin/php-cs-fixer fix
 
-ci: lint test ## Run CI checks locally
+ci: db-test-prepare ## Run all CI checks locally
+	docker compose exec app composer validate --strict
+	$(MAKE) lint
+	$(MAKE) security
+	$(MAKE) test

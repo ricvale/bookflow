@@ -68,7 +68,7 @@ final class ContainerConfig
                 'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
                 $getEnv('DB_HOST', 'db'),
                 $getEnv('DB_PORT', '3306'),
-                $getEnv('DB_NAME', 'bookflow')
+                $getEnv('DB_NAME', 'bookflow'),
             );
 
             return new PDO(

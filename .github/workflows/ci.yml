@@ -16,6 +16,8 @@ jobs:
         env:
           MYSQL_ROOT_PASSWORD: root
           MYSQL_DATABASE: bookflow_test
+          MYSQL_USER: bookflow
+          MYSQL_PASSWORD: bookflow
         ports:
           - 3306:3306
         options: >-
@@ -59,8 +61,8 @@ jobs:
           DB_HOST: 127.0.0.1
           DB_PORT: 3306
           DB_NAME: bookflow_test
-          DB_USER: root
-          DB_PASS: root
+          DB_USER: bookflow
+          DB_PASS: bookflow
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3

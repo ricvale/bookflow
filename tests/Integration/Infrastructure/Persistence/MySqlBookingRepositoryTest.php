@@ -24,11 +24,17 @@ final class MySqlBookingRepositoryTest extends TestCase
     protected function setUp(): void
     {
         // Use credentials from docker-compose.yml / .env.example
+        $host = getenv('DB_HOST') ?: 'db';
+        $port = getenv('DB_PORT') ?: '3306';
+        $dbname = getenv('DB_NAME') ?: 'bookflow';
+        $user = getenv('DB_USER') ?: 'bookflow';
+        $pass = getenv('DB_PASS') ?: 'bookflow';
+
         $this->pdo = new PDO(
-            'mysql:host=db;dbname=bookflow;charset=utf8mb4',
-            'bookflow',
-            'bookflow',
-            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION]
+            sprintf('mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4', $host, $port, $dbname),
+            $user,
+            $pass,
+            [PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION],
         );
 
         $this->tenantId = TenantId::fromString('tenant-test-123');
