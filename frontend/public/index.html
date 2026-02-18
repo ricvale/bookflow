@@ -103,7 +103,7 @@
                     class="w-full flex items-center justify-center gap-2 bg-white border border-gray-200 text-gray-700 text-sm font-semibold py-2.5 rounded-xl hover:bg-gray-50 transition shadow-sm group">
                     <img src="https://www.google.com/favicon.ico"
                         class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity">
-                    <span id="sync-btn-text">Sync Calendar</span>
+                    <span id="sync-btn-text">Connect Google Calendar</span>
                 </button>
             </div>
         </nav>
@@ -246,20 +246,20 @@
                 <div class="flex flex-wrap gap-4 items-center bg-white p-4 rounded-xl border border-gray-200 shadow-sm">
                     <div class="flex-1 relative">
                         <i data-lucide="search" class="w-4 h-4 absolute left-3 top-3 text-gray-400"></i>
-                        <input type="text" placeholder="Search bookings..."
+                        <input type="text" id="filter-search" placeholder="Search bookings..."
                             class="w-full pl-10 pr-4 py-2 rounded-lg border border-gray-200 focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none">
                     </div>
                     <select id="filter-resource"
                         class="px-4 py-2 rounded-lg border border-gray-200 bg-white text-sm focus:border-brand-500 outline-none">
                         <option value="all">All Resources</option>
                     </select>
-                    <div class="flex bg-gray-100 p-1 rounded-lg">
-                        <button
-                            class="px-3 py-1.5 text-xs font-medium rounded-md bg-white shadow-sm text-gray-800">All</button>
-                        <button
-                            class="px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 hover:text-gray-900">Confirmed</button>
-                        <button
-                            class="px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 hover:text-gray-900">Cancelled</button>
+                    <div id="filter-status-group" class="flex bg-gray-100 p-1 rounded-lg">
+                        <button type="button" data-status="all"
+                            class="filter-status-btn px-3 py-1.5 text-xs font-medium rounded-md bg-white shadow-sm text-gray-800">All</button>
+                        <button type="button" data-status="confirmed"
+                            class="filter-status-btn px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 hover:text-gray-900">Confirmed</button>
+                        <button type="button" data-status="cancelled"
+                            class="filter-status-btn px-3 py-1.5 text-xs font-medium rounded-md text-gray-500 hover:text-gray-900">Cancelled</button>
                     </div>
                     <button id="sync-google-btn" onclick="syncWithGoogle()"
                         class="flex items-center gap-2 px-4 py-2 bg-brand-50 text-brand-700 hover:bg-brand-100 rounded-lg text-sm font-semibold transition-all">
@@ -433,6 +433,7 @@
     <script>
         const API_URL = '/api';
         let resourcesMap = {};
+        let allBookings = [];
         const token = localStorage.getItem('auth_token');
         if (!token) window.location.href = 'login.html';
 
@@ -508,7 +509,7 @@
                 const grid = document.getElementById('resources-grid');
 
                 select.innerHTML = '<option value="">Choose...</option>';
-                // Keep filter default
+                filterSelect.innerHTML = '<option value="all">All Resources</option>';
 
                 grid.innerHTML = '';
 
@@ -550,14 +551,49 @@
             try {
                 const res = await apiFetch('/bookings');
                 const data = await res.json();
-                const bookings = data.bookings || [];
+                allBookings = data.bookings || [];
 
-                document.getElementById('stat-daily').textContent = bookings.length;
-                renderBookingTable(bookings);
-                updateDashboardStats(bookings);
-                renderRecentActivity(bookings);
+                document.getElementById('stat-daily').textContent = allBookings.length;
+                applyBookingsFilter();
+                updateDashboardStats(allBookings);
+                renderRecentActivity(allBookings);
             } catch (e) { console.error("Bookings Error", e); }
         }
+
+        function applyBookingsFilter() {
+            const search = (document.getElementById('filter-search')?.value || '').trim().toLowerCase();
+            const resourceId = document.getElementById('filter-resource')?.value || 'all';
+            const activeStatusBtn = document.querySelector('#filter-status-group .filter-status-btn.bg-white');
+            const status = activeStatusBtn?.getAttribute('data-status') || 'all';
+
+            let filtered = allBookings.filter(b => {
+                if (resourceId !== 'all' && b.resource_id !== resourceId) return false;
+                if (status !== 'all' && b.status !== status) return false;
+                if (search) {
+                    const date = new Date(b.starts_at);
+                    const { date: dateStr, time: timeStr } = formatDateTime(date);
+                    const resourceName = (resourcesMap[b.resource_id] || b.resource_id || '').toLowerCase();
+                    const line = `${resourceName} ${dateStr} ${timeStr} ${b.status}`.toLowerCase();
+                    if (!line.includes(search)) return false;
+                }
+                return true;
+            });
+            renderBookingTable(filtered);
+        }
+
+        document.getElementById('filter-search').addEventListener('input', applyBookingsFilter);
+        document.getElementById('filter-resource').addEventListener('change', applyBookingsFilter);
+        document.getElementById('filter-status-group').addEventListener('click', (e) => {
+            const btn = e.target.closest('.filter-status-btn');
+            if (!btn) return;
+            document.querySelectorAll('#filter-status-group .filter-status-btn').forEach(b => {
+                b.classList.remove('bg-white', 'shadow-sm', 'text-gray-800');
+                b.classList.add('text-gray-500', 'hover:text-gray-900');
+            });
+            btn.classList.add('bg-white', 'shadow-sm', 'text-gray-800');
+            btn.classList.remove('text-gray-500', 'hover:text-gray-900');
+            applyBookingsFilter();
+        });
 
         function renderBookingTable(bookings) {
             const tbody = document.getElementById('bookings-table-body');
@@ -697,6 +733,7 @@
 
         async function cancelBooking(id, btn) {
             if (!confirm("Are you sure you want to cancel?")) return;
+            const originalHTML = btn.innerHTML;
             btn.innerHTML = '<i class="animate-spin" data-lucide="loader"></i>';
             lucide.createIcons();
 
@@ -705,8 +742,16 @@
                 if (res.ok) {
                     showToast('Booking cancelled.');
                     fetchBookings();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Could not cancel booking.');
                 }
-            } catch (e) { }
+            } catch (e) {
+                showToast('Could not cancel booking.');
+            } finally {
+                btn.innerHTML = originalHTML;
+                lucide.createIcons();
+            }
         }
 
         function showToast(msg) {
@@ -728,18 +773,20 @@
                     const data = await res.json();
                     showToast('Sync complete!');
                     if (data.bookings) {
-                        const bookings = data.bookings;
-                        document.getElementById('stat-daily').textContent = bookings.length;
-                        renderBookingTable(bookings);
-                        updateDashboardStats(bookings);
-                        renderRecentActivity(bookings);
+                        allBookings = data.bookings;
+                        document.getElementById('stat-daily').textContent = allBookings.length;
+                        applyBookingsFilter();
+                        updateDashboardStats(allBookings);
+                        renderRecentActivity(allBookings);
                     }
+                    checkGoogleConnection();
                 } else {
                     const err = await res.json();
-                    alert(err.error || 'Sync failed');
+                    showToast(err.error || 'Sync failed');
                 }
             } catch (e) {
                 console.error("Sync Error", e);
+                showToast('Sync failed. Please try again.');
             } finally {
                 btn.innerHTML = originalHTML;
                 btn.disabled = false;
@@ -751,6 +798,7 @@
         async function startGoogleAuth() {
             const btn = document.getElementById('google-sync-btn');
             const btnText = document.getElementById('sync-btn-text');
+            if (btn.disabled) return;
             btnText.textContent = 'Redirecting...';
             btn.disabled = true;
 
@@ -758,11 +806,16 @@
                 const res = await apiFetch('/auth/google/url');
                 const data = await res.json();
                 if (data.url) {
+                    showToast('Connecting to Google…');
                     window.location.href = data.url;
+                } else {
+                    btnText.textContent = 'Connect Google Calendar';
+                    btn.disabled = false;
                 }
             } catch (e) {
                 console.error("Auth URL Error", e);
-                btnText.textContent = 'Sync Calendar';
+                showToast('Could not start Google connection.');
+                btnText.textContent = 'Connect Google Calendar';
                 btn.disabled = false;
             }
         }
@@ -784,14 +837,27 @@
                 if (data.is_google_connected) {
                     const btn = document.getElementById('google-sync-btn');
                     if (btn) {
+                        btn.disabled = true;
                         btn.classList.add('bg-green-50', 'border-green-100', 'text-green-700');
                         btn.classList.remove('text-gray-700', 'hover:bg-gray-50');
                         btn.innerHTML = `
                             <i data-lucide="check-circle" class="w-4 h-4 text-green-500"></i>
                             <span>Calendar Connected</span>
                         `;
+                        lucide.createIcons();
                     }
-                    lucide.createIcons();
+                } else {
+                    const btn = document.getElementById('google-sync-btn');
+                    if (btn) {
+                        btn.disabled = false;
+                        btn.classList.remove('bg-green-50', 'border-green-100', 'text-green-700');
+                        btn.classList.add('text-gray-700', 'hover:bg-gray-50');
+                        btn.innerHTML = `
+                            <img src="https://www.google.com/favicon.ico"
+                                class="w-4 h-4 opacity-70 group-hover:opacity-100 transition-opacity">
+                            <span id="sync-btn-text">Connect Google Calendar</span>
+                        `;
+                    }
                 }
             } catch (e) {
                 console.error("Profile check failed", e);

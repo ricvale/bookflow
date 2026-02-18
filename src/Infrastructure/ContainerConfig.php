@@ -18,6 +18,7 @@ use BookFlow\Application\Shared\Interfaces\EventDispatcherInterface;
 use BookFlow\Application\Shared\Interfaces\TenantContextInterface;
 use BookFlow\Application\Shared\Interfaces\UserContextInterface;
 use BookFlow\Domain\Booking\BookingRepositoryInterface;
+use BookFlow\Domain\Booking\CancellationPolicy;
 use BookFlow\Domain\Booking\Events\BookingCancelled;
 use BookFlow\Domain\Booking\Events\BookingCreated;
 use BookFlow\Domain\Booking\Interfaces\CalendarClientInterface;
@@ -206,11 +207,15 @@ final class ContainerConfig
             $c->get(CalendarSyncService::class)
         ));
 
-        $container->bind(CancelBooking::class, fn (Container $c) => new CancelBooking(
-            $c->get(BookingRepositoryInterface::class),
-            $c->get(TenantContextInterface::class),
-            $c->get(EventDispatcherInterface::class)
-        ));
+        $container->bind(CancelBooking::class, function (Container $c) use ($getEnv) {
+            $hours = (int) $getEnv('CANCELLATION_MIN_HOURS_BEFORE_START', '24');
+            return new CancelBooking(
+                $c->get(BookingRepositoryInterface::class),
+                $c->get(TenantContextInterface::class),
+                new CancellationPolicy($hours),
+                $c->get(EventDispatcherInterface::class)
+            );
+        });
 
         $container->bind(CreateResource::class, fn (Container $c) => new CreateResource(
             $c->get(ResourceRepositoryInterface::class),

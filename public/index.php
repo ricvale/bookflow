@@ -14,6 +14,7 @@ if (file_exists(__DIR__ . '/../.env')) {
 
 use BookFlow\Domain\Booking\Exception\BookingConflictException;
 use BookFlow\Domain\Booking\Exception\BookingNotFoundException;
+use BookFlow\Domain\Booking\Exception\CancellationNotAllowedException;
 use BookFlow\Http\Controllers\AuthController;
 use BookFlow\Http\Controllers\BookingController;
 use BookFlow\Http\Controllers\GoogleAuthController;
@@ -129,6 +130,8 @@ try {
     Response::notFound($e->getMessage())->send();
 } catch (BookingConflictException $e) {
     Response::json(['error' => $e->getMessage()], 409)->send();
+} catch (CancellationNotAllowedException $e) {
+    Response::json(['error' => $e->getMessage()], 422)->send();
 } catch (HttpException $e) {
     Response::json($e->toArray(), $e->statusCode)->send();
 } catch (PDOException $e) {
