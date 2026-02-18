@@ -11,10 +11,14 @@
   - ✅ Multi-Tenant JWT Authentication.
   - ✅ Google Calendar Two-Way Synchronization.
   - ✅ Domain Event System for Side Effects.
-  - ✅ Containerized Environment (Docker/MySQL).
+  - ✅ Containerized Environment (Docker/MariaDB).
   - ✅ Demo Readiness: Integrated Cloudflare Quick Tunnel for instant sharing.
 
 ## 🚀 Upcoming Roadmap
+
+### 🐛 Bug Fixes & UI Improvements (Immediate)
+- [ ] **Bookings Table**: Fix data table filtering issues.
+- [ ] **Google Integration**: Improve "Sync" and "Calendar Connected" button functionality and UX.
 
 ### Phase 1: Core Booking Logic (Next)
 - [ ] **Recurring Bookings**: Implement "Repeat Weekly/Monthly" strategies in Domain layer.

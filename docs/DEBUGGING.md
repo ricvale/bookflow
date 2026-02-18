@@ -292,7 +292,7 @@ docker compose logs -f nginx
 docker compose exec db cat /var/log/mysql/slow-query.log
 
 # Execute SQL directly
-docker compose exec db mysql -u bookflow -pbookflow bookflow
+docker compose exec db mariadb -u bookflow -pbookflow bookflow
 
 # Check PHP configuration
 docker compose exec app php -i | grep xdebug

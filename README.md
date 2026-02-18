@@ -11,7 +11,7 @@ A portfolio-grade, multi-tenant SaaS booking system built with modern PHP.
 ### Stack
 
 - PHP 8.4+ (strict types, no framework)
-- MySQL 8.0
+- MariaDB 10.11+
 - Vanilla JavaScript
 - Docker for development
 
@@ -56,7 +56,7 @@ docker compose exec app ./vendor/bin/phpunit
 #### Access
 
 - Application: http://localhost:8000
-- MySQL: localhost:3306 (user: `bookflow`, password: `bookflow`)
+- MariaDB: localhost:3306 (user: `bookflow`, password: `bookflow`)
 
 #### Deployment & Sharing
 
@@ -77,7 +77,7 @@ bookflow/
 ├── src/                # Backend (PHP)
 │   ├── Domain/        # Pure business logic
 │   ├── Application/   # Use cases and policies
-│   ├── Infrastructure/# MySQL, APIs, logging
+│   ├── Infrastructure/# MariaDB, APIs, logging
 │   └── Http/          # Controllers and routing
 ├── frontend/           # Frontend (Vanilla JS) - SEPARATE
 │   ├── src/           # JavaScript modules

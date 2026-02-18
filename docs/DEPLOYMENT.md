@@ -21,7 +21,7 @@ This guide covers deploying BookFlow to production environments.
 └──────┬──────┘
        │
 ┌──────▼──────┐
-│   MySQL     │  Database (Primary + Replicas)
+│   MariaDB   │  Database (Primary + Replicas)
 └─────────────┘
 ```
 
@@ -87,16 +87,16 @@ services:
           memory: 512M
 
   db:
-    image: mysql:8.0
+    image: mariadb:11.6
     restart: always
     environment:
-      MYSQL_DATABASE: ${DB_DATABASE}
-      MYSQL_USER: ${DB_USERNAME}
-      MYSQL_PASSWORD: ${DB_PASSWORD}
-      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: ${DB_DATABASE}
+      MARIADB_USER: ${DB_USERNAME}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - db_data:/var/lib/mysql
-      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
+      - ./docker/mariadb/my.cnf:/etc/mysql/conf.d/my.cnf
     networks:
       - bookflow
     deploy:
@@ -175,13 +175,13 @@ server {
 
 ```bash
 # Backup existing data
-docker compose exec db mysqldump -u bookflow -p bookflow > backup.sql
+docker compose exec db mariadb-dump -u bookflow -p bookflow > backup.sql
 
 # Run migrations
 docker compose exec app php bin/migrate.php
 
 # Verify
-docker compose exec db mysql -u bookflow -p bookflow -e "SHOW TABLES;"
+docker compose exec db mariadb -u bookflow -p bookflow -e "SHOW TABLES;"
 ```
 
 ## Deployment Steps
@@ -310,7 +310,7 @@ git checkout <previous-commit>
 docker compose -f docker-compose.prod.yml up -d --build
 
 # Restore database (if needed)
-gunzip < backup.sql.gz | docker compose exec -T db mysql -u bookflow -p bookflow
+gunzip < backup.sql.gz | docker compose exec -T db mariadb -u bookflow -p bookflow
 ```
 
 ## Performance Optimization
@@ -374,11 +374,11 @@ docker stats
 
 ### Database Connection Errors
 ```bash
-# Check MySQL status
-docker compose exec db mysqladmin -u root -p status
+# Check MariaDB status
+docker compose exec db mariadb-admin -u root -p status
 
 # Check connections
-docker compose exec db mysql -e "SHOW STATUS LIKE 'Threads_connected';"
+docker compose exec db mariadb -e "SHOW STATUS LIKE 'Threads_connected';"
 ```
 
 ## See Also

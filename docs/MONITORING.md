@@ -111,9 +111,9 @@ echo "bookings_created_last_hour $bookings_last_hour\n";
 $stmt = $pdo->query('SHOW STATUS LIKE "Threads_connected"');
 $connections = $stmt->fetch()['Value'];
 
-echo "# HELP mysql_connections Current MySQL connections\n";
-echo "# TYPE mysql_connections gauge\n";
-echo "mysql_connections $connections\n";
+echo "# HELP mariadb_connections Current MariaDB connections\n";
+echo "# TYPE mariadb_connections gauge\n";
+echo "mariadb_connections $connections\n";
 ```
 
 **Prometheus config** (`prometheus.yml`):
@@ -153,7 +153,7 @@ groups:
           description: "P95 latency is {{ $value }}s"
 
       - alert: DatabaseDown
-        expr: up{job="mysql"} == 0
+        expr: up{job="mariadb"} == 0
         for: 1m
         labels:
           severity: critical
@@ -265,7 +265,7 @@ SentrySdk::getCurrentHub()->addBreadcrumb(
 
 ### Slow Query Log
 
-Enable in MySQL:
+Enable in MariaDB:
 ```ini
 slow_query_log=1
 slow_query_log_file=/var/log/mysql/slow-query.log
@@ -277,10 +277,10 @@ log_queries_not_using_indexes=1
 
 ```bash
 # Analyze slow queries
-docker compose exec db mysqldumpslow /var/log/mysql/slow-query.log
+docker compose exec db mariadb-dumpslow /var/log/mysql/slow-query.log
 
 # Real-time query monitoring
-docker compose exec db mysql -e "SHOW FULL PROCESSLIST;"
+docker compose exec db mariadb -e "SHOW FULL PROCESSLIST;"
 ```
 
 ## Dashboard (Grafana)
@@ -306,7 +306,7 @@ services:
 2. **Error Rate**: `rate(http_requests_total{status=~"5.."}[5m])`
 3. **Response Time**: `histogram_quantile(0.95, http_request_duration_seconds)`
 4. **Active Tenants**: `count(distinct(tenant_id))`
-5. **Database Connections**: `mysql_threads_connected`
+5. **Database Connections**: `mariadb_threads_connected`
 
 ## Cost Monitoring
 
