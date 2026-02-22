@@ -1,5 +1,7 @@
 # Project Status & Roadmap
 
+**Next session:** Recurring Bookings (Phase 1) — Domain repeat strategies, then use case and persistence.
+
 ## 🎯 Current Status
 **Production Ready Logic**
 - **Architecture**: Advanced DDD with Framework-light PHP (8.4).
@@ -17,12 +19,12 @@
 ## 🚀 Upcoming Roadmap
 
 ### 🐛 Bug Fixes & UI Improvements (Immediate)
-- [ ] **Bookings Table**: Fix data table filtering issues.
-- [ ] **Google Integration**: Improve "Sync" and "Calendar Connected" button functionality and UX.
+- [x] **Bookings Table**: Fix data table filtering issues.
+- [x] **Google Integration**: Improve "Sync" and "Calendar Connected" button functionality and UX.
 
-### Phase 1: Core Booking Logic (Next)
-- [ ] **Recurring Bookings**: Implement "Repeat Weekly/Monthly" strategies in Domain layer.
-- [ ] **Cancellation Policies**: Rules for when and how bookings can be cancelled.
+### Phase 1: Core Booking Logic
+- [ ] **Recurring Bookings** (Next): Implement "Repeat Weekly/Monthly" strategies in Domain layer.
+- [x] **Cancellation Policies**: Rules for when and how bookings can be cancelled (env: `CANCELLATION_MIN_HOURS_BEFORE_START`).
 
 ### Phase 2: User Experience
 - [ ] **User Profile UI**: Interface for managing Google connections.
