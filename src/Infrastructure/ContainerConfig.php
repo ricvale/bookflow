@@ -64,7 +64,7 @@ final class ContainerConfig
         // Infrastructure - Core Services
         // ============================================================
 
-        $container->singleton(PDO::class, function () use ($getEnv) {
+        $container->singleton(PDO::class, function () use ($getEnv): PDO {
             $dsn = sprintf(
                 'mysql:host=%s;port=%s;dbname=%s;charset=utf8mb4',
                 $getEnv('DB_HOST', 'db'),
@@ -84,14 +84,14 @@ final class ContainerConfig
         // Infrastructure - Context Services (Singletons for request lifetime)
         // ============================================================
 
-        $container->singleton(TenantContextInterface::class, fn () => new InMemoryTenantContext());
-        $container->singleton(UserContextInterface::class, fn () => new InMemoryUserContext());
+        $container->singleton(TenantContextInterface::class, fn (): InMemoryTenantContext => new InMemoryTenantContext());
+        $container->singleton(UserContextInterface::class, fn (): InMemoryUserContext => new InMemoryUserContext());
 
         // ============================================================
         // Infrastructure - Auth
         // ============================================================
 
-        $container->singleton(JwtTokenGenerator::class, function () use ($getEnv) {
+        $container->singleton(JwtTokenGenerator::class, function () use ($getEnv): JwtTokenGenerator {
             return new JwtTokenGenerator(
                 secret: $getEnv('JWT_SECRET', 'fallback_secret_must_be_32_characters_long_minimum_!!')
             );
@@ -105,7 +105,7 @@ final class ContainerConfig
         // Infrastructure - External Services
         // ============================================================
 
-        $container->singleton(GoogleCalendarClient::class, function () use ($getEnv) {
+        $container->singleton(GoogleCalendarClient::class, function () use ($getEnv): GoogleCalendarClient {
             return new GoogleCalendarClient(
                 clientId: $getEnv('GOOGLE_CLIENT_ID', 'your-client-id'),
                 clientSecret: $getEnv('GOOGLE_CLIENT_SECRET', 'your-client-secret'),
@@ -115,7 +115,7 @@ final class ContainerConfig
 
         $container->bind(CalendarClientInterface::class, fn (Container $c) => $c->get(GoogleCalendarClient::class));
 
-        $container->singleton(MailerInterface::class, function () use ($getEnv) {
+        $container->singleton(MailerInterface::class, function () use ($getEnv): MailerInterface {
             $transport = Transport::fromDsn($getEnv('MAILER_DSN', 'smtp://localhost'));
             return new SymfonyMailer(
                 new Mailer($transport),
@@ -207,13 +207,13 @@ final class ContainerConfig
             $c->get(CalendarSyncService::class)
         ));
 
-        $container->bind(CancelBooking::class, function (Container $c) use ($getEnv) {
+        $container->bind(CancelBooking::class, function (Container $c) use ($getEnv): CancelBooking {
             $hours = (int) $getEnv('CANCELLATION_MIN_HOURS_BEFORE_START', '24');
             return new CancelBooking(
                 $c->get(BookingRepositoryInterface::class),
                 $c->get(TenantContextInterface::class),
                 new CancellationPolicy($hours),
-                $c->get(EventDispatcherInterface::class)
+                $c->get(EventDispatcherInterface::class),
             );
         });
 

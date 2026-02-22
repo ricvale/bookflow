@@ -15,7 +15,7 @@ final class CancellationNotAllowedException extends BookingException
         return new self(
             sprintf(
                 'Cancellation is not allowed. Bookings must be cancelled at least %d hour(s) before the start time.',
-                $minimumHours
+                $minimumHours,
             )
         );
     }

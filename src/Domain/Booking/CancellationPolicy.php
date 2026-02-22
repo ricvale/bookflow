@@ -32,6 +32,7 @@ final class CancellationPolicy
         }
 
         $cutoff = $now->modify("+{$this->minimumHoursBeforeStart} hours");
+
         return $bookingStart >= $cutoff;
     }
 

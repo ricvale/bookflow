@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace BookFlow\Tests\Unit\Application\Booking;
 
 use BookFlow\Application\Booking\CancelBooking;
+use BookFlow\Application\Shared\Interfaces\TenantContextInterface;
 use BookFlow\Domain\Booking\Booking;
 use BookFlow\Domain\Booking\BookingId;
 use BookFlow\Domain\Booking\BookingRepositoryInterface;
@@ -15,7 +16,6 @@ use BookFlow\Domain\Booking\Exception\CancellationNotAllowedException;
 use BookFlow\Domain\Resource\ResourceId;
 use BookFlow\Domain\Shared\DateRange;
 use BookFlow\Domain\Shared\TenantId;
-use BookFlow\Application\Shared\Interfaces\TenantContextInterface;
 use DateTimeImmutable;
 use PHPUnit\Framework\MockObject\MockObject;
 use PHPUnit\Framework\TestCase;
@@ -39,7 +39,7 @@ final class CancelBookingTest extends TestCase
         $useCase = new CancelBooking(
             $this->bookings,
             $this->tenantContext,
-            new CancellationPolicy(24)
+            new CancellationPolicy(24),
         );
 
         $this->expectException(BookingNotFoundException::class);
@@ -58,7 +58,7 @@ final class CancelBookingTest extends TestCase
         $useCase = new CancelBooking(
             $this->bookings,
             $this->tenantContext,
-            new CancellationPolicy(24)
+            new CancellationPolicy(24),
         );
 
         $this->expectException(BookingNotFoundException::class);
@@ -79,7 +79,7 @@ final class CancelBookingTest extends TestCase
             $this->tenantContext,
             new CancellationPolicy(24),
             null,
-            fn () => $now
+            fn () => $now,
         );
 
         $this->expectException(CancellationNotAllowedException::class);
@@ -99,7 +99,7 @@ final class CancelBookingTest extends TestCase
         $useCase = new CancelBooking(
             $this->bookings,
             $this->tenantContext,
-            new CancellationPolicy(24)
+            new CancellationPolicy(24),
         );
 
         $useCase->execute('booking-123');

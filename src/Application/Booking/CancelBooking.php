@@ -7,8 +7,8 @@ namespace BookFlow\Application\Booking;
 use BookFlow\Application\Shared\Interfaces\EventDispatcherInterface;
 use BookFlow\Application\Shared\Interfaces\TenantContextInterface;
 use BookFlow\Domain\Booking\BookingId;
-use BookFlow\Domain\Booking\CancellationPolicy;
 use BookFlow\Domain\Booking\BookingRepositoryInterface;
+use BookFlow\Domain\Booking\CancellationPolicy;
 use BookFlow\Domain\Booking\Exception\BookingNotFoundException;
 use BookFlow\Domain\Booking\Exception\CancellationNotAllowedException;
 use DateTimeImmutable;
@@ -26,7 +26,7 @@ final class CancelBooking
         private TenantContextInterface $tenantContext,
         private CancellationPolicy $cancellationPolicy,
         private ?EventDispatcherInterface $eventDispatcher = null,
-        private ?\Closure $nowFactory = null
+        private ?\Closure $nowFactory = null,
     ) {
     }
 
@@ -51,6 +51,7 @@ final class CancelBooking
         }
 
         $now = $this->nowFactory !== null ? ($this->nowFactory)() : new DateTimeImmutable();
+
         if (!$this->cancellationPolicy->allowsCancellation($booking->timeSlot()->startsAt(), $now)) {
             throw CancellationNotAllowedException::tooCloseToStart(
                 $this->cancellationPolicy->minimumHoursBeforeStart()
